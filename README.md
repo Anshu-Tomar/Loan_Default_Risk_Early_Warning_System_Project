@@ -1,4 +1,3 @@
-# Loan_Default_Risk_Early_Warning_System_Project
 # LoanEWS — Loan Default Risk Early Warning System
 
 A full-stack MEAN application that proactively identifies borrowers likely to default within 30 days, generates AI-powered risk explanations, and surfaces actionable alerts for credit/collections teams.
