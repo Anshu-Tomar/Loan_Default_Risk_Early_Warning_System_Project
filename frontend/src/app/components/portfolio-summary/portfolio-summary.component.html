@@ -1,0 +1,66 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Portfolio Overview</h2>
+    <p class="subtitle">Manager-level risk summary across all borrowers</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-center"><mat-spinner></mat-spinner></div>
+
+  <div *ngIf="summary && !loading">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <mat-icon>people</mat-icon>
+        <span class="kpi-value">{{ summary.totalBorrowers }}</span>
+        <span class="kpi-label">Total Borrowers</span>
+      </div>
+      <div class="kpi-card">
+        <mat-icon>account_balance</mat-icon>
+        <span class="kpi-value">₹{{ (summary.totalLoanValue / 100000) | number:'1.1-1' }}L</span>
+        <span class="kpi-label">Total Loan Value</span>
+      </div>
+      <div class="kpi-card">
+        <mat-icon>pending_actions</mat-icon>
+        <span class="kpi-value">₹{{ (summary.totalOutstanding / 100000) | number:'1.1-1' }}L</span>
+        <span class="kpi-label">Total Outstanding</span>
+      </div>
+      <div class="kpi-card warn">
+        <mat-icon>notifications_active</mat-icon>
+        <span class="kpi-value">{{ summary.activeAlerts }}</span>
+        <span class="kpi-label">Active Alerts</span>
+      </div>
+      <div class="kpi-card">
+        <mat-icon>trending_up</mat-icon>
+        <span class="kpi-value">{{ summary.avgRiskScore }}/100</span>
+        <span class="kpi-label">Avg Risk Score</span>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <mat-card class="chart-card">
+        <mat-card-header><mat-card-title>Risk Distribution</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <canvas baseChart
+            [data]="donutChartData"
+            [options]="donutChartOptions"
+            type="doughnut">
+          </canvas>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="breakdown-card">
+        <mat-card-header><mat-card-title>Borrower Breakdown</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <!-- Use typed riskCategories array + helper methods — no index signature errors -->
+          <div class="breakdown-row" *ngFor="let cat of riskCategories">
+            <div class="breakdown-label">{{ cat }}</div>
+            <mat-progress-bar
+              mode="determinate"
+              [value]="getBarPercent(cat)">
+            </mat-progress-bar>
+            <span class="breakdown-count">{{ getDistribution(cat) }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,81 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h2>Risk Alerts</h2>
+      <p class="subtitle">Active early warning alerts requiring attention</p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="showAcknowledged = !showAcknowledged; loadAlerts()">
+        <mat-icon>{{ showAcknowledged ? 'visibility_off' : 'visibility' }}</mat-icon>
+        {{ showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-center"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <div class="alert-list" *ngIf="!loading">
+    <div *ngIf="alerts.length === 0" class="empty-state">
+      <mat-icon>notifications_none</mat-icon>
+      <p>No active alerts</p>
+    </div>
+
+    <mat-card *ngFor="let alert of alerts" [class]="'alert-card ' + getSeverityClass(alert.severity)">
+      <div class="alert-top">
+        <div class="alert-meta">
+          <span [class]="'severity-badge ' + getSeverityClass(alert.severity)">
+            <mat-icon>{{ alert.severity === 'Critical' ? 'crisis_alert' : 'warning' }}</mat-icon>
+            {{ alert.severity }}
+          </span>
+          <span class="borrower-id">{{ alert.borrowerId }} — {{ alert.borrowerName }}</span>
+          <span class="alert-time">{{ alert.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+        </div>
+        <div class="alert-actions">
+          <button mat-icon-button color="primary" (click)="viewBorrower(alert.borrowerId)"
+            matTooltip="View borrower">
+            <mat-icon>open_in_new</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Explanation -->
+      <div class="explanation" *ngIf="alert.llmExplanation">
+        <mat-icon>smart_toy</mat-icon>
+        <p>{{ alert.llmExplanation }}</p>
+      </div>
+
+      <!-- Risk Reasons -->
+      <div class="reasons-list">
+        <div class="reason-item" *ngFor="let r of alert.reasons">
+          <mat-icon>chevron_right</mat-icon>{{ r }}
+        </div>
+      </div>
+
+      <!-- Recommended Action -->
+      <div class="recommended-action">
+        <mat-icon>assignment_turned_in</mat-icon>
+        <span>{{ alert.recommendedAction }}</span>
+      </div>
+
+      <!-- Acknowledge Section (analyst/manager only) -->
+      <div class="acknowledge-section" *ngIf="!alert.isAcknowledged && authService.hasRole('analyst', 'manager')">
+        <mat-divider></mat-divider>
+        <div class="ack-row">
+          <mat-form-field appearance="outline" class="notes-field">
+            <mat-label>Analyst notes (optional)</mat-label>
+            <input matInput [(ngModel)]="acknowledgeNotes[alert._id]" placeholder="Add notes before acknowledging...">
+          </mat-form-field>
+          <button mat-raised-button color="accent" (click)="acknowledge(alert)">
+            <mat-icon>check_circle</mat-icon> Acknowledge
+          </button>
+        </div>
+      </div>
+
+      <div class="acknowledged-tag" *ngIf="alert.isAcknowledged">
+        <mat-icon>check_circle</mat-icon>
+        Acknowledged by {{ alert.acknowledgedBy }} on {{ alert.acknowledgedAt | date:'dd MMM' }}
+        <span *ngIf="alert.analystNotes"> — "{{ alert.analystNotes }}"</span>
+      </div>
+    </mat-card>
+  </div>
+</div>

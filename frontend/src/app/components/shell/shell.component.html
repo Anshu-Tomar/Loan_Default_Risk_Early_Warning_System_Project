@@ -1,0 +1,40 @@
+<mat-sidenav-container class="shell-container" autosize>
+  <mat-sidenav #sidenav mode="side" opened="true" class="sidenav">
+    <div class="sidenav-header">
+      <div class="brand">
+        <span class="material-icons brand-icon">shield</span>
+        <div>
+          <span class="brand-name">LoanEWS</span>
+          <span class="brand-sub">Risk Monitor</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <a *ngFor="let item of navItems"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="nav-item">
+        <span class="material-icons">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="sidenav-footer">
+      <div class="user-info">
+        <div class="user-avatar">{{ user?.username?.charAt(0)?.toUpperCase() }}</div>
+        <div class="user-details">
+          <span class="user-name">{{ user?.username }}</span>
+          <span class="user-role">{{ user?.role }}</span>
+        </div>
+      </div>
+      <button mat-icon-button (click)="logout()" title="Sign out">
+        <span class="material-icons" style="color:#64748b">logout</span>
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main-content">
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

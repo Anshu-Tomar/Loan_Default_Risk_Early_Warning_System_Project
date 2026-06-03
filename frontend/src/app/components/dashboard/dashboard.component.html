@@ -1,0 +1,146 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h2>Borrower Dashboard</h2>
+      <p class="subtitle">Monitor and manage borrower risk in real time</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="scoreAll()"
+      *ngIf="authService.hasRole('manager')"
+      [disabled]="scoringAll" class="score-all-btn">
+      {{ scoringAll ? 'Scoring...' : 'Score All Borrowers' }}
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card critical">
+      <div class="card-icon">
+        <span class="material-icons">crisis_alert</span>
+      </div>
+      <div class="card-content">
+        <span class="card-value">{{ criticalCount }}</span>
+        <span class="card-label">Critical</span>
+      </div>
+    </div>
+    <div class="summary-card high">
+      <div class="card-icon">
+        <span class="material-icons">warning</span>
+      </div>
+      <div class="card-content">
+        <span class="card-value">{{ highRiskCount }}</span>
+        <span class="card-label">High Risk</span>
+      </div>
+    </div>
+    <div class="summary-card watchlist">
+      <div class="card-icon">
+        <span class="material-icons">visibility</span>
+      </div>
+      <div class="card-content">
+        <span class="card-value">{{ watchlistCount }}</span>
+        <span class="card-label">Watchlist</span>
+      </div>
+    </div>
+    <div class="summary-card alerts-card">
+      <div class="card-icon">
+        <span class="material-icons">notifications_active</span>
+      </div>
+      <div class="card-content">
+        <span class="card-value">{{ activeAlerts.length }}</span>
+        <span class="card-label">Active Alerts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-row">
+    <span class="filter-label">Filter by risk:</span>
+    <div class="filter-chips">
+      <button *ngFor="let f of riskFilters" mat-stroked-button
+        [class.active-filter]="selectedFilter === f.value"
+        (click)="onFilterChange(f.value)">
+        {{ f.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <!-- Table -->
+  <mat-card class="table-card" *ngIf="!loading">
+    <table mat-table [dataSource]="borrowers" class="borrower-table">
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Borrower</th>
+        <td mat-cell *matCellDef="let b">
+          <div class="borrower-cell">
+            <div class="avatar">{{ b.name.charAt(0) }}</div>
+            <div>
+              <span class="borrower-name">{{ b.name }}</span>
+              <span class="borrower-email">{{ b.email }}</span>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="borrowerId">
+        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <td mat-cell *matCellDef="let b"><code>{{ b.borrowerId }}</code></td>
+      </ng-container>
+
+      <ng-container matColumnDef="riskCategory">
+        <th mat-header-cell *matHeaderCellDef>Risk Category</th>
+        <td mat-cell *matCellDef="let b">
+          <span [class]="'risk-badge risk-' + getRiskColor(b.riskCategory)">
+            {{ b.riskCategory }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="riskScore">
+        <th mat-header-cell *matHeaderCellDef>Risk Score</th>
+        <td mat-cell *matCellDef="let b">
+          <div class="score-cell">
+            <mat-progress-bar mode="determinate" [value]="b.riskScore"
+              [class]="'score-bar-' + getRiskColor(b.riskCategory)">
+            </mat-progress-bar>
+            <span class="score-value">{{ b.riskScore }}/100</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="outstandingBalance">
+        <th mat-header-cell *matHeaderCellDef>Outstanding</th>
+        <td mat-cell *matCellDef="let b">₹{{ b.outstandingBalance | number:'1.0-0' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="lastScored">
+        <th mat-header-cell *matHeaderCellDef>Last Scored</th>
+        <td mat-cell *matCellDef="let b">
+          {{ b.lastScoredAt ? (b.lastScoredAt | date:'dd MMM, HH:mm') : 'Never' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let b">
+          <button mat-icon-button color="primary" (click)="viewBorrower(b.borrowerId); $event.stopPropagation()"
+            title="View details">
+            <span class="material-icons">open_in_new</span>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+        class="table-row" (click)="viewBorrower(row.borrowerId)"></tr>
+    </table>
+
+    <div *ngIf="borrowers.length === 0" class="empty-state">
+      <span class="material-icons">inbox</span>
+      <p>No borrowers found</p>
+    </div>
+  </mat-card>
+</div>

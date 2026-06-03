@@ -1,0 +1,45 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo-icon">
+        <span class="material-icons">shield</span>
+      </div>
+      <h1>LoanEWS</h1>
+      <p>Loan Default Risk Early Warning System</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Username</mat-label>
+        <input matInput formControlName="username" placeholder="Enter username" autocomplete="username">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput [type]="hidePassword ? 'password' : 'text'"
+          formControlName="password" autocomplete="current-password">
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+          <span class="material-icons">{{ hidePassword ? 'visibility_off' : 'visibility' }}</span>
+        </button>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" type="submit"
+        class="full-width login-btn" [disabled]="loginForm.invalid || loading">
+        <mat-spinner *ngIf="loading" diameter="20" style="display:inline-block"></mat-spinner>
+        <span *ngIf="!loading">Sign In</span>
+      </button>
+    </form>
+
+    <mat-divider style="margin: 20px 0"></mat-divider>
+
+    <div class="demo-section">
+      <p class="demo-label">Quick Login</p>
+      <div class="demo-chips">
+        <button mat-stroked-button *ngFor="let acc of demoAccounts"
+          (click)="fillDemo(acc)" class="demo-btn">
+          {{ acc.label }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

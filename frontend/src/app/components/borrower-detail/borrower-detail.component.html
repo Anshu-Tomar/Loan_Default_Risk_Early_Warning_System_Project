@@ -1,0 +1,192 @@
+<div class="page-container" *ngIf="!loading; else loadingTpl">
+  <div *ngIf="borrower">
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="borrower-title">
+        <div class="avatar-lg">{{ borrower.name.charAt(0) }}</div>
+        <div>
+          <h2>{{ borrower.name }}</h2>
+          <p>{{ borrower.borrowerId }} · {{ borrower.email }}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span [class]="'risk-badge-lg ' + getRiskClass(borrower.riskCategory)">
+          {{ borrower.riskCategory }}
+        </span>
+        <button mat-raised-button color="primary" (click)="scoreBorrower()"
+          [disabled]="scoring" *ngIf="authService.hasRole('analyst', 'manager')">
+          <mat-icon>refresh</mat-icon>
+          {{ scoring ? 'Scoring...' : 'Re-score' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <!-- Left Column -->
+      <div class="left-col">
+        <!-- Loan Info -->
+        <mat-card class="info-card">
+          <mat-card-header><mat-card-title>Loan Details</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Loan Amount</span>
+                <span class="info-value">₹{{ borrower.loanAmount | number:'1.0-0' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Outstanding Balance</span>
+                <span class="info-value highlight">₹{{ borrower.outstandingBalance | number:'1.0-0' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">EMI Amount</span>
+                <span class="info-value">₹{{ borrower.emiAmount | number:'1.0-0' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Credit Utilization</span>
+                <span class="info-value">{{ borrower.creditUtilization }}%</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Monthly Income</span>
+                <span class="info-value">₹{{ borrower.monthlyIncome | number:'1.0-0' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Risk Score</span>
+                <span class="info-value bold">{{ borrower.riskScore }}/100</span>
+              </div>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="borrower.riskScore"
+              [class]="'score-bar ' + getRiskClass(borrower.riskCategory)"></mat-progress-bar>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Risk Indicators -->
+        <mat-card class="info-card" *ngIf="borrower.riskIndicators?.length">
+          <mat-card-header><mat-card-title>Risk Signals</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <div class="indicator-list">
+              <div class="indicator-item" *ngFor="let ind of borrower.riskIndicators">
+                <mat-icon>warning_amber</mat-icon>
+                <span>{{ ind }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Scenario Simulation -->
+        <mat-card class="info-card" *ngIf="authService.hasRole('analyst', 'manager')">
+          <mat-card-header>
+            <mat-card-title>Scenario Simulation</mat-card-title>
+            <mat-card-subtitle>"What if the next EMI is missed?"</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <button mat-stroked-button (click)="runScenario()" color="accent">
+              <mat-icon>science</mat-icon> Run Simulation
+            </button>
+            <div *ngIf="scenario" class="scenario-result">
+              <div class="scenario-row">
+                <div class="scenario-box current">
+                  <span class="scenario-label">Current</span>
+                  <span [class]="'scenario-category ' + getRiskClass(scenario.current.riskCategory)">
+                    {{ scenario.current.riskCategory }}
+                  </span>
+                  <span class="scenario-score">{{ scenario.current.riskScore }}/100</span>
+                </div>
+                <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                <div class="scenario-box simulated">
+                  <span class="scenario-label">After Missed EMI</span>
+                  <span [class]="'scenario-category ' + getRiskClass(scenario.simulated.riskCategory)">
+                    {{ scenario.simulated.riskCategory }}
+                  </span>
+                  <span class="scenario-score">{{ scenario.simulated.riskScore }}/100
+                    <span class="delta" *ngIf="scenario.scoreDelta > 0">+{{ scenario.scoreDelta }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-col">
+        <!-- Risk Trend Chart -->
+        <mat-card class="info-card" *ngIf="borrower.riskTrend?.length">
+          <mat-card-header><mat-card-title>Risk Score Trend</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <canvas baseChart [data]="trendChartData" [options]="trendChartOptions" type="line"></canvas>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Payment History -->
+        <mat-card class="info-card" *ngIf="borrower.paymentHistory?.length">
+          <mat-card-header><mat-card-title>Payment History</mat-card-title></mat-card-header>
+          <mat-card-content class="table-wrap">
+            <table mat-table [dataSource]="borrower.paymentHistory || []">
+              <ng-container matColumnDef="dueDate">
+                <th mat-header-cell *matHeaderCellDef>Due Date</th>
+                <td mat-cell *matCellDef="let p">{{ p.dueDate | date:'dd MMM yy' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="paidDate">
+                <th mat-header-cell *matHeaderCellDef>Paid Date</th>
+                <td mat-cell *matCellDef="let p">{{ p.paidDate ? (p.paidDate | date:'dd MMM yy') : '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>Amount</th>
+                <td mat-cell *matCellDef="let p">₹{{ p.amount | number:'1.0-0' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let p">
+                  <span [class]="'status-badge status-' + p.status">{{ p.status | titlecase }}</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="daysLate">
+                <th mat-header-cell *matHeaderCellDef>Days Late</th>
+                <td mat-cell *matCellDef="let p">{{ p.daysLate || 0 }}</td>
+              </ng-container>
+              <ng-container matColumnDef="failedAutoDebit">
+                <th mat-header-cell *matHeaderCellDef>Failed Debit</th>
+                <td mat-cell *matCellDef="let p">
+                  <mat-icon *ngIf="p.failedAutoDebit" color="warn">close</mat-icon>
+                  <mat-icon *ngIf="!p.failedAutoDebit" style="color:#22c55e">check</mat-icon>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="paymentDisplayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: paymentDisplayedColumns;"></tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Analyst Query -->
+        <mat-card class="info-card" *ngIf="authService.hasRole('analyst', 'manager')">
+          <mat-card-header>
+            <mat-card-title>Ask AI about this Borrower</mat-card-title>
+            <mat-card-subtitle>Answers grounded only in available data</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Your question</mat-label>
+              <input matInput [(ngModel)]="analystQuestion"
+                placeholder="Why was this borrower flagged? What is their payment trend?">
+            </mat-form-field>
+            <button mat-raised-button color="primary" (click)="submitQuery()"
+              [disabled]="!analystQuestion || queryLoading">
+              <mat-icon>psychology</mat-icon>
+              {{ queryLoading ? 'Thinking...' : 'Ask' }}
+            </button>
+            <div class="query-answer" *ngIf="queryAnswer">
+              <mat-icon>smart_toy</mat-icon>
+              <p>{{ queryAnswer }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="loading-center">
+    <mat-spinner></mat-spinner>
+  </div>
+</ng-template>
